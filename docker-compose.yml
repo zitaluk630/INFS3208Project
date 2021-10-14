@@ -1,0 +1,68 @@
+version: "3.3"
+services:
+  mysql:
+    image: mariadb:latest
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: INFS3208Project
+      MYSQL_DATABASE: DyeReview
+      MYSQL_USER: project
+      MYSQL_PASSWORD: project
+    networks:
+      - mynet
+
+  myredis:
+    image: redis:latest
+    container_name: myredis
+    restart: always
+    networks:
+      - mynet
+
+  myphp:
+    depends_on:
+      - mysql
+      - myredis
+    build: setup/php
+    container_name: myphp
+    restart: always
+    expose:
+      - "9000"
+    volumes:
+      - ./INFS3208:/var/www/html
+    networks:
+      - mynet
+
+  mynginx:
+    depends_on:
+      - myphp
+    image: nginx
+    container_name: mynginx
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./setup/nginx.ini:/etc/nginx/conf.d/default.conf
+      - ./INFS3208:/var/www/html
+    networks:
+      - mynet
+
+  phpmyadmin:
+    depends_on:
+      - mysql
+    image: phpmyadmin
+    container_name: phpMyAdmin
+    restart: always
+    ports:
+      - "8082:80"
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: MyDBRoot123
+      MYSQL_USER: project
+      MYSQL_PASSWORD: project
+    networks:
+      - mynet
+
+networks:
+  mynet:
+    driver: bridge
